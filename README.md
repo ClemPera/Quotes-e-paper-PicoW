@@ -1,4 +1,4 @@
-What is this project ? This project use an e-paper screen with a Pico W to show Quotes from Reddit (r/quotes) and shows time and date
+This project use an e-paper screen with a Pico W to show Quotes from Reddit (r/quotes) and shows time and date
 
 ![alt text](https://github.com/ClemPera/Quotes-e-paper-PicoW/blob/main/Images/Image1.jpg?raw=true)
 ![alt text](https://github.com/ClemPera/Quotes-e-paper-PicoW/blob/main/Images/Image2.jpg?raw=true)
