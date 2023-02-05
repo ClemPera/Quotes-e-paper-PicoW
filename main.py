@@ -11,6 +11,8 @@ import urequests
 import json
 import random
 
+from dht import DHT11, InvalidChecksum
+
 WF_PARTIAL_2IN13_V3= [
     0x0,0x40,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,
     0x80,0x80,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,
@@ -284,6 +286,7 @@ class EPD_2in13_V3_Landscape(framebuf.FrameBuffer):
 def connect_wifi():
     ssid = 'YourWiFi' #Replace with your ssid
     password = 'YourWifiPassword' #Replace with your wifi password
+
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     wlan.connect(ssid, password)
@@ -302,7 +305,6 @@ def connect_wifi():
         print('connected')
         status = wlan.ifconfig()
         print( 'ip = ' + status[0] )
-        
         
 def set_time(): #Set the time
     NTP_DELTA = 2208988800 + 18000 #Modify the value after + (or replace with -) for your timezone : +3600 = UTC+1  / +18000 = 5*3600 = UTC+5  
@@ -323,7 +325,7 @@ def set_time(): #Set the time
     machine.RTC().datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
 
 def request():
-    allQuote = urequests.get("https://www.reddit.com/r/quotes/top/.json?t=week&limit=10")
+    allQuote = urequests.get("https://www.reddit.com/r/quotes/top/.json?t=week&limit=5")
     j = json.loads(allQuote.text)
     
     numQuo = len(j['data']['children']) #number of quote
@@ -335,6 +337,7 @@ def request():
 
 if __name__=='__main__':
      connect_wifi() #Don't forget to replace value in this function
+         
      set_time()
      
      #Setup and initalise e-ink screen
@@ -342,6 +345,8 @@ if __name__=='__main__':
      epd.Clear()
      epd.init()
      epd.fill(0xff)
+     
+     sensor = DHT11(Pin(28, Pin.OUT, Pin.PULL_DOWN)) #Replace 28 by your GPIO for the temp sensor
      
      fullClear = True
      oldDate = 0
@@ -358,7 +363,11 @@ if __name__=='__main__':
          date = "{}/{}/{}".format(now[2], now[1], now[0])
          hourMin = "{}:{}".format(now[3], now[4])
          
+         temp = sensor.temperature
+         humidity = sensor.humidity 
+         
          if date != oldDate or line > 80: #If the date has changed or the quote is too long, update the quote.
+             epd.Clear()
              epd.fill(0xff)
              
              quote = request()
@@ -368,7 +377,7 @@ if __name__=='__main__':
              quoteSplit = quote.split()
 
              total=0
-             line = 10
+             line = 20
 
              while total < len(quoteSplit): #Place text on screen
                  listTmp = []
@@ -394,17 +403,34 @@ if __name__=='__main__':
              epd.fill_rect(200, 106, 50, 50, 0xff)
              epd.text(hourMin, 200, 106, 0x00)
              
+             print("Updating temperature and humidity...")
+             epd.fill_rect(0, 0, 50, 20, 0xff)
+             epd.text("T:"+str(temp), 0, 10, 0x00)
+             
+             epd.fill_rect(200, 0, 50, 20, 0xff)
+             epd.text("H:{:.0f}%".format(humidity), 200, 10, 0x00)
+             
              epd.display(epd.buffer)
              fullClear = False
+             
          elif oldTime != hourMin:
              print("Updating date/time...")
              epd.fill_rect(0, 106, 50, 50, 0xff)
              epd.text(date, 0, 106, 0x00)
+             epd.display_Partial(epd.buffer)
              
              epd.fill_rect(200, 106, 50, 50, 0xff)
              epd.text(hourMin, 200, 106, 0x00)
+             epd.display_Partial(epd.buffer)
              
+             print("Updating temperature and humidity...")
+             epd.fill_rect(0, 0, 50, 20, 0xff)
+             epd.text("T:"+str(temp), 0, 10, 0x00)
+             epd.display_Partial(epd.buffer)
+             
+             epd.fill_rect(200, 0, 50, 20, 0xff)
+             epd.text("H:{:.0f}%".format(humidity), 200, 10, 0x00)
              epd.display_Partial(epd.buffer)
              
          oldTime = hourMin
-         time.sleep(1)
+         time.sleep(5)
