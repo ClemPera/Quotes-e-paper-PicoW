@@ -1,14 +1,16 @@
-This project use an e-paper screen with a Pico W to show Quotes from Reddit (r/quotes) and shows time and date
+This project use an e-paper screen with a Pico W to show Quotes from Reddit (r/quotes) and shows time, date, temperature and humidity
 
 ![alt text](https://github.com/ClemPera/Quotes-e-paper-PicoW/blob/main/Images/Image1.jpg?raw=true)
 ![alt text](https://github.com/ClemPera/Quotes-e-paper-PicoW/blob/main/Images/Image2.jpg?raw=true)
 
 Material :
 - Waveshare 2.13inch e-paper hat : https://www.waveshare.com/2.13inch-e-paper-hat.htm
+- DHT11 temperature and humidity sensor
 - Raspberry Pico W
 
 Instructions :
 - Plug the screen using the waveshare documentation : https://www.waveshare.com/wiki/Pico-ePaper-2.13
+- Plug your sensor using GPIO 28     
 - Copy main.py and urequest.py on your Pico W
 - Change the value of ssid and password in connect_wifi() function in main.py
 - Change your timezone in set_time() funcion in main.py
