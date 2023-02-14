@@ -368,6 +368,7 @@ if __name__=='__main__':
          
          if date != oldDate or line > 80: #If the date has changed or the quote is too long, update the quote.
              epd.Clear()
+             epd.init()
              epd.fill(0xff)
              
              quote = request()
