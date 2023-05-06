@@ -307,7 +307,7 @@ def connect_wifi():
         print( 'ip = ' + status[0] )
         
 def set_time(): #Set the time
-    NTP_DELTA = 2208988800 + 18000 #Modify the value after + (or replace with -) for your timezone : +3600 = UTC+1  / +18000 = 5*3600 = UTC+5  
+    NTP_DELTA = 2208988800 + 14400 #Modify the value after + (or replace with -) for your timezone : +3600 = UTC+1  / +18000 = 5*3600 = UTC+5  
     host = "pool.ntp.org"
     NTP_QUERY = bytearray(48)
     NTP_QUERY[0] = 0x1B
@@ -325,7 +325,11 @@ def set_time(): #Set the time
     machine.RTC().datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
 
 def request():
-    allQuote = urequests.get("https://www.reddit.com/r/quotes/top/.json?t=week&limit=5")
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
+
+    allQuote = urequests.get("https://www.reddit.com/r/quotes/top/.json?t=week&limit=5", headers=headers)
     j = json.loads(allQuote.text)
     
     numQuo = len(j['data']['children']) #number of quote
@@ -336,102 +340,108 @@ def request():
     return(text) #Return only the title of the reddit post
 
 if __name__=='__main__':
-     connect_wifi() #Don't forget to replace value in this function
-         
-     set_time()
-     
-     #Setup and initalise e-ink screen
-     epd = EPD_2in13_V3_Landscape()
-     epd.Clear()
-     epd.init()
-     epd.fill(0xff)
-     
-     sensor = DHT11(Pin(28, Pin.OUT, Pin.PULL_DOWN)) #Replace 28 by your GPIO for the temp sensor
-     
-     fullClear = True
-     oldDate = 0
-     line = 0
-     
      while True:
-         now = list(time.localtime())
-         
-         #If it is a digit, add 0 in front to make it easier to read.
-         for x in range(1,5):
-             if now[x] < 10:
-                 now[x] = "0" + str(now[x])
-         
-         date = "{}/{}/{}".format(now[2], now[1], now[0])
-         hourMin = "{}:{}".format(now[3], now[4])
-         
-         temp = sensor.temperature
-         humidity = sensor.humidity 
-         
-         if date != oldDate or line > 80: #If the date has changed or the quote is too long, update the quote.
+         try:
+             connect_wifi() #Don't forget to replace value in this function
+                 
+             set_time()
+             
+             #Setup and initalise e-ink screen
+             epd = EPD_2in13_V3_Landscape()
              epd.Clear()
              epd.init()
              epd.fill(0xff)
              
-             quote = request()
-             print(quote)
-
-             #Split the quote
-             quoteSplit = quote.split()
-
-             total=0
-             line = 20
-
-             while total < len(quoteSplit): #Place text on screen
-                 listTmp = []
-                 a=0
-                
-                 while len(' '.join(listTmp)) < 24 and total < len(quoteSplit): #Place lines of the quote on screen
-                     listTmp.insert(a, quoteSplit[total])
-                     a = a + 1
-                     total = total + 1
-                 
-                 line = line + 10
-                 epd.text((' '.join(listTmp)).center(31), 0, line, 0x00) #print quote on edp
+             sensor = DHT11(Pin(28, Pin.OUT, Pin.PULL_DOWN)) #Replace 28 by your GPIO for the temp sensor
              
-             oldDate = date
              fullClear = True
-         
-         #Update text on screen
-         if(fullClear == True):
-             print("Updating quote and date/time...")
-             epd.fill_rect(0, 106, 50, 50, 0xff)
-             epd.text(date, 0, 106, 0x00)
+             oldDate = 0
+             line = 0
              
-             epd.fill_rect(200, 106, 50, 50, 0xff)
-             epd.text(hourMin, 200, 106, 0x00)
-             
-             print("Updating temperature and humidity...")
-             epd.fill_rect(0, 0, 50, 20, 0xff)
-             epd.text("T:"+str(temp), 0, 10, 0x00)
-             
-             epd.fill_rect(200, 0, 50, 20, 0xff)
-             epd.text("H:{:.0f}%".format(humidity), 200, 10, 0x00)
-             
-             epd.display(epd.buffer)
-             fullClear = False
-             
-         elif oldTime != hourMin:
-             print("Updating date/time...")
-             epd.fill_rect(0, 106, 50, 50, 0xff)
-             epd.text(date, 0, 106, 0x00)
-             epd.display_Partial(epd.buffer)
-             
-             epd.fill_rect(200, 106, 50, 50, 0xff)
-             epd.text(hourMin, 200, 106, 0x00)
-             epd.display_Partial(epd.buffer)
-             
-             print("Updating temperature and humidity...")
-             epd.fill_rect(0, 0, 50, 20, 0xff)
-             epd.text("T:"+str(temp), 0, 10, 0x00)
-             epd.display_Partial(epd.buffer)
-             
-             epd.fill_rect(200, 0, 50, 20, 0xff)
-             epd.text("H:{:.0f}%".format(humidity), 200, 10, 0x00)
-             epd.display_Partial(epd.buffer)
-             
-         oldTime = hourMin
-         time.sleep(5)
+             while True:
+                 now = list(time.localtime())
+                 
+                 #If it is a digit, add 0 in front to make it easier to read.
+                 for x in range(1,5):
+                     if now[x] < 10:
+                         now[x] = "0" + str(now[x])
+                 
+                 date = "{}/{}/{}".format(now[2], now[1], now[0])
+                 hourMin = "{}:{}".format(now[3], now[4])
+                 
+                 temp = sensor.temperature
+                 humidity = sensor.humidity 
+                 
+                 if date != oldDate or line > 80: #If the date has changed or the quote is too long, update the quote.
+                     epd.Clear()
+                     epd.init()
+                     epd.fill(0xff)
+                     
+                     quote = request()
+                     print(quote)
+
+                     #Split the quote
+                     quoteSplit = quote.split()
+
+                     total=0
+                     line = 20
+
+                     while total < len(quoteSplit): #Place text on screen
+                         listTmp = []
+                         a=0
+                        
+                         while len(' '.join(listTmp)) < 24 and total < len(quoteSplit): #Place lines of the quote on screen
+                             listTmp.insert(a, quoteSplit[total])
+                             a = a + 1
+                             total = total + 1
+                         
+                         line = line + 10
+                         epd.text((' '.join(listTmp)).center(31), 0, line, 0x00) #print quote on edp
+                     
+                     oldDate = date
+                     fullClear = True
+                 
+                 #Update text on screen
+                 if(fullClear == True):
+                     print("Updating quote and date/time...")
+                     epd.fill_rect(0, 106, 50, 50, 0xff)
+                     epd.text(date, 0, 106, 0x00)
+                     
+                     epd.fill_rect(200, 106, 50, 50, 0xff)
+                     epd.text(hourMin, 200, 106, 0x00)
+                     
+                     print("Updating temperature and humidity...")
+                     epd.fill_rect(0, 0, 50, 20, 0xff)
+                     epd.text("T:"+str(temp), 0, 10, 0x00)
+                     
+                     epd.fill_rect(200, 0, 50, 20, 0xff)
+                     epd.text("H:{:.0f}%".format(humidity), 200, 10, 0x00)
+                     
+                     epd.display(epd.buffer)
+                     fullClear = False
+                     
+                 elif oldTime != hourMin:
+                     print("Updating date/time...")
+                     epd.fill_rect(0, 106, 50, 50, 0xff)
+                     epd.text(date, 0, 106, 0x00)
+                     epd.display_Partial(epd.buffer)
+                     
+                     epd.fill_rect(200, 106, 50, 50, 0xff)
+                     epd.text(hourMin, 200, 106, 0x00)
+                     epd.display_Partial(epd.buffer)
+                     
+                     print("Updating temperature and humidity...")
+                     epd.fill_rect(0, 0, 50, 20, 0xff)
+                     epd.text("T:"+str(temp), 0, 10, 0x00)
+                     epd.display_Partial(epd.buffer)
+                     
+                     epd.fill_rect(200, 0, 50, 20, 0xff)
+                     epd.text("H:{:.0f}%".format(humidity), 200, 10, 0x00)
+                     epd.display_Partial(epd.buffer)
+                     
+                 oldTime = hourMin
+                 time.sleep(5)
+                 
+         except Exception as e:
+             time.sleep(30)
+             continue
