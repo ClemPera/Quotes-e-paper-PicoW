@@ -1,3 +1,6 @@
+# This doesn't work anymore because of recent changes in reddit API.
+
+
 This project use an e-paper screen with a Pico W to show Quotes from Reddit (r/quotes) and shows time, date, temperature and humidity
 
 ![alt text](https://github.com/ClemPera/Quotes-e-paper-PicoW/blob/main/Images/Image1.jpg?raw=true)
